@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membuat Game Snake Dengan HTML5 dan jQuery</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 2px solid #ecf0f1;
+            background-color: #34495e;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="ruang" width="500" height="500"></canvas>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // Deklarasi
+            var ruang = $("#ruang")[0];
+            var ctx = ruang.getContext("2d");
+            var lebar = $("#ruang").width();
+            var tinggi = $("#ruang").height();
+
+            var cw = 20; // ukuran cell
+            var tekan;
+            var makanan;
+            var nilai;
+            var level;
+            var game_loop;
+
+            // Membuat array untuk ular
+            var array_ular;
+
+            function init() {
+                tekan = "right"; // default direction
+                create_snake();
+                create_makanan(); // membuat makanan untuk ular
+                nilai = 0;
+                level = 1; // level awal
+
+                if (typeof game_loop != "undefined") clearInterval(game_loop);
+                game_loop = setInterval(paint, 100); // kecepatan awal
+            }
+
+            init();
+
+            // Membuat ular
+            function create_snake() {
+                var length = 5; // panjang ular default
+                array_ular = [];
+                for (var i = length - 1; i >= 0; i--) {
+                    array_ular.push({ x: i, y: 0 }); // membuat ular horizontal mulai dari arah kiri
+                }
+            }
+
+            // Membuat makanan untuk ular
+            function create_makanan() {
+                makanan = {
+                    x: Math.floor(Math.random() * (lebar / cw)),
+                    y: Math.floor(Math.random() * (tinggi / cw))
+                };
+            }
+
+            // Pengaturan
+            function paint() {
+                // Warna background
+                ctx.fillStyle = "#34495e";
+                ctx.fillRect(0, 0, lebar, tinggi);
+                ctx.strokeStyle = "#ecf0f1";
+                ctx.strokeRect(0, 0, lebar, tinggi);
+
+                // Membuat pergerakan untuk ular
+                var nx = array_ular[0].x;
+                var ny = array_ular[0].y;
+                if (tekan == "right") nx++;
+                else if (tekan == "left") nx--;
+                else if (tekan == "up") ny--;
+                else if (tekan == "down") ny++;
+
+                // Memeriksa tabrakan
+                if (
+                    nx < 0 || nx >= lebar / cw ||
+                    ny < 0 || ny >= tinggi / cw ||
+                    cek_tabrakan(nx, ny, array_ular)
+                ) {
+                    // Restart game
+                    init();
+                    return;
+                }
+
+                // Cek jika ular kena makanan
+                if (nx == makanan.x && ny == makanan.y) {
+                    var ekor = { x: nx, y: ny };
+                    nilai++;
+                    create_makanan(); // membuat makanan yang baru
+
+                    // Meningkatkan level dan kecepatan
+                    if (nilai % 5 === 0) { // setiap 5 makanan, tingkatkan level
+                        level++;
+                        clearInterval(game_loop);
+                        game_loop = setInterval(paint, 100 - (level * 10)); // tingkatkan kecepatan
+                    }
+                } else {
+                    var ekor = array_ular.pop(); // hapus ekor
+                    ekor.x = nx;
+                    ekor.y = ny;
+                }
+
+                array_ular.unshift(ekor); // tambahkan ekor baru ke depan
+
+                for (var i = 0; i < array_ular.length; i++) {
+                    var c = array_ular
